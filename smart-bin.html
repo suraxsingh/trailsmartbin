@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Trash2Tech Smart Bin AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Load TensorFlow + Teachable Machine -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.3.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: radial-gradient(ellipse at center, #0d0d0d 0%, #000000 100%);
+      color: #00ff99;
+      text-align: center;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: 26px;
+      margin: 30px 20px 10px;
+      color: #00ff99;
+      text-shadow: 0 0 12px rgba(0, 255, 153, 0.4);
+    }
+
+    p {
+      font-size: 15px;
+      color: #cccccc;
+      margin: 0 20px 20px;
+    }
+
+    button {
+      background-color: #00ff99;
+      color: #000;
+      border: none;
+      padding: 12px 28px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 0 15px #00ff99;
+      transition: all 0.3s ease-in-out;
+    }
+
+    button:hover {
+      background-color: #00e688;
+      transform: scale(1.05);
+      box-shadow: 0 0 25px #00ff99;
+    }
+
+    #webcam-container {
+      margin-top: 30px;
+    }
+
+    canvas {
+      width: 90vw;
+      max-width: 360px;
+      height: auto;
+      border-radius: 15px;
+      border: 4px solid #00ff99;
+      box-shadow: 0 0 20px rgba(0, 255, 153, 0.3);
+    }
+
+    #label {
+      margin-top: 25px;
+      font-size: 18px;
+      color: white;
+      background-color: rgba(0, 255, 153, 0.1);
+      padding: 10px 20px;
+      border-radius: 10px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 12px rgba(0, 255, 153, 0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>♻️ Trash2Tech Smart Bin AI</h1>
+  <p>Tap below to begin scanning with your camera</p>
+
+  <button onclick="init()">Start Detection</button>
+
+  <div id="webcam-container"></div>
+  <div id="label">Waiting for input...</div>
+
+  <script type="text/javascript">
+    const URL = "https://teachablemachine.withgoogle.com/models/D55mKEALO/";
+    let model, webcam, labelContainer;
+
+    async function init() {
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+
+      model = await tmImage.load(modelURL, metadataURL);
+      const maxPredictions = model.getTotalClasses();
+
+      webcam = new tmImage.Webcam(320, 240, true); // width, height, flip
+      await webcam.setup();
+      await webcam.play();
+      window.requestAnimationFrame(loop);
+
+      document.getElementById("webcam-container").appendChild(webcam.canvas);
+      labelContainer = document.getElementById("label");
+    }
+
+    async function loop() {
+      webcam.update();
+      await predict();
+      window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+      const prediction = await model.predict(webcam.canvas);
+      const top = prediction.reduce((a, b) =>
+        a.probability > b.probability ? a : b
+      );
+      labelContainer.innerText = `🧠 Detected: ${top.className} (${(top.probability * 100).toFixed(1)}%)`;
+    }
+  </script>
+</body>
+</html>
