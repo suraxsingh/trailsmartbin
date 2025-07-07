@@ -41,11 +41,12 @@
       background-color: #00ff99;
       color: #000;
       border: none;
-      padding: 12px 28px;
+      padding: 12px 24px;
       font-size: 16px;
       font-weight: 600;
       border-radius: 30px;
       cursor: pointer;
+      margin: 10px;
       box-shadow: 0 0 15px #00ff99;
       transition: all 0.3s ease-in-out;
     }
@@ -57,13 +58,12 @@
     }
 
     #webcam-container {
-      margin-top: 30px;
+      margin-top: 20px;
     }
 
     canvas {
       width: 90vw;
       max-width: 360px;
-      height: auto;
       border-radius: 15px;
       border: 4px solid #00ff99;
       box-shadow: 0 0 20px rgba(0, 255, 153, 0.3);
@@ -87,6 +87,7 @@
   <p>Tap below to begin scanning with your camera</p>
 
   <button onclick="init()">Start Detection</button>
+  <button onclick="flipCamera()">🔄 Flip Camera</button>
 
   <div id="webcam-container"></div>
   <div id="label">Waiting for input...</div>
@@ -94,6 +95,7 @@
   <script type="text/javascript">
     const URL = "https://teachablemachine.withgoogle.com/models/D55mKEALO/";
     let model, webcam, labelContainer;
+    let facingMode = "environment"; // default to back cam
 
     async function init() {
       const modelURL = URL + "model.json";
@@ -102,13 +104,24 @@
       model = await tmImage.load(modelURL, metadataURL);
       const maxPredictions = model.getTotalClasses();
 
-      webcam = new tmImage.Webcam(320, 240, true); // width, height, flip
-      await webcam.setup();
+      if (webcam) {
+        webcam.stop();
+      }
+
+      webcam = new tmImage.Webcam(320, 240, true, facingMode);
+      await webcam.setup({ facingMode: facingMode });
       await webcam.play();
       window.requestAnimationFrame(loop);
 
-      document.getElementById("webcam-container").appendChild(webcam.canvas);
+      const container = document.getElementById("webcam-container");
+      container.innerHTML = "";
+      container.appendChild(webcam.canvas);
       labelContainer = document.getElementById("label");
+    }
+
+    function flipCamera() {
+      facingMode = facingMode === "user" ? "environment" : "user";
+      init();
     }
 
     async function loop() {
